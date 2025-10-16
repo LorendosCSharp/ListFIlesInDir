@@ -136,6 +136,8 @@ def main():
     print(f"[ ] FO {base_name:<30} {human_size(size_bytes)}")
     list_tree(root, follow_symlinks=True, excluded=excluded)
     print("```")
+    input("Please entry any key to exit....")
+    sys.exit()
 
 if __name__ == "__main__":
     main()
