@@ -45,24 +45,29 @@ def dir_size(path, follow_symlinks=False):
 
 # ---- Printing Tree ----
 
-def list_tree(path, prefix="", follow_symlinks=False, excluded=None, is_last=True):
-    """Recursively print directory tree with improved formatting."""
+def list_tree(path, follow_symlinks=False, excluded=None, nestedLevel=1):
+    """
+    Recursively print directory tree in Obsidian using collapsible code blocks.
+    Each folder is a foldable block; files are indented inside.
+    """
     excluded = excluded or set()
+    indent = "  " * nestedLevel  # 2 spaces per level
 
     try:
-        entries = sorted(os.listdir(path), key=lambda n: (not os.path.isdir(os.path.join(path, n)), n.lower()))
+        entries = sorted(
+            os.listdir(path),
+            key=lambda n: (not os.path.isdir(os.path.join(path, n)), n.lower())
+        )
     except (OSError, PermissionError):
-        print(prefix + f"[ ] !! {os.path.basename(path)} <inaccessible>")
+        print(f"{indent}[ ] !! {os.path.basename(path)} <inaccessible>")
         return
 
-    for i, name in enumerate(entries):
+    for name in entries:
         if name in excluded:
-            continue  # skip excluded folders
+            continue
 
         full = os.path.join(path, name)
         is_dir = os.path.isdir(full)
-        last_entry = (i == len(entries) - 1)
-        connector = "└── " if last_entry else "├── "
 
         try:
             size_bytes = dir_size(full, follow_symlinks) if is_dir else os.path.getsize(full)
@@ -70,15 +75,14 @@ def list_tree(path, prefix="", follow_symlinks=False, excluded=None, is_last=Tru
         except (OSError, PermissionError):
             size_str = "<inaccessible>"
 
-        icon = "FO " if is_dir else "FI "
-        color_start = "\033[94m" if is_dir else "\033[0m"
-        color_end = "\033[0m"
-
-        print(f"{prefix}{connector}[ ]{color_start}{icon}{name:<30}{color_end} {size_str}")
+        icon = "FO" if is_dir else "FI"
 
         if is_dir:
-            new_prefix = prefix + ("    " if last_entry else "│   ")
-            list_tree(full, new_prefix, follow_symlinks, excluded=excluded, is_last=last_entry)
+            print(f"{indent}[ ] {icon} {name}  {size_str}")
+            # recursive call for contents
+            list_tree(full, follow_symlinks, excluded=excluded, nestedLevel=nestedLevel + 1)
+        else:
+            print(f"{indent}- [ ] {icon} {name}  {size_str}")
 
 # ---- Folder Selection ----
 
@@ -128,8 +132,11 @@ def main():
 
     base_name = os.path.basename(root) or root
     size_bytes = dir_size(root, follow_symlinks=True)
-    print(f"\n[ ] FO {base_name:<30} {human_size(size_bytes)}")
-    list_tree(root, prefix="", follow_symlinks=True, excluded=excluded)
+    print("```")
+    print(f"[ ] FO {base_name:<30} {human_size(size_bytes)}")
+    list_tree(root, follow_symlinks=True, excluded=excluded)
+    print("```")
 
 if __name__ == "__main__":
     main()
+
